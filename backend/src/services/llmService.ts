@@ -1,10 +1,8 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { v4 as uuidv4 } from 'uuid';
 import { AnalysisResponse, AnalysisResponseSchema, SkinIssue } from '../types/schema';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
 const ANALYSIS_PROMPT = `You are an expert cosmetic skin analyst. Analyze the provided facial image and identify common cosmetic skin concerns.
 
@@ -59,37 +57,26 @@ Be professional, non-alarmist, and focus on cosmetic concerns only. Do not provi
 
 export async function analyzeImageWithLLM(imageBase64: string): Promise<AnalysisResponse> {
   try {
-    const response = await openai.chat.completions.create({
-      model: process.env.LLM_MODEL || 'gpt-4-vision-preview',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: ANALYSIS_PROMPT
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:image/jpeg;base64,${imageBase64}`
-              }
-            }
-          ]
-        }
-      ],
-      max_tokens: 2000,
-      temperature: 0.3 // Lower temperature for more consistent output
-    });
+    // Use Gemini 1.5 Flash for better speed and cost-efficiency, or Pro Vision
+    const model = genAI.getGenerativeModel({ model: process.env.LLM_MODEL || 'gemini-1.5-flash' });
 
-    const content = response.choices[0]?.message?.content;
-    
-    if (!content) {
-      throw new Error('No response from LLM');
+    const imagePart = {
+      inlineData: {
+        data: imageBase64,
+        mimeType: 'image/jpeg',
+      },
+    };
+
+    const result = await model.generateContent([ANALYSIS_PROMPT, imagePart]);
+    const response = await result.response;
+    const text = response.text();
+
+    if (!text) {
+      throw new Error('No response from Gemini');
     }
 
     // Clean up response (remove markdown code blocks if present)
-    let cleanedContent = content.trim();
+    let cleanedContent = text.trim();
     if (cleanedContent.startsWith('```json')) {
       cleanedContent = cleanedContent.replace(/^```json\n?/, '').replace(/\n?```$/, '');
     } else if (cleanedContent.startsWith('```')) {
@@ -146,26 +133,17 @@ export async function generateProductSummary(
   issue: SkinIssue
 ): Promise<string> {
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a skincare expert. Generate brief, evidence-focused product recommendations.'
-        },
-        {
-          role: 'user',
-          content: `Generate a 2-3 sentence explanation of why "${productName}" with active ingredients [${keyActives.join(', ')}] is suitable for treating "${issue.issue_name}". Keep it professional and evidence-focused.`
-        }
-      ],
-      max_tokens: 150,
-      temperature: 0.5
-    });
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    return response.choices[0]?.message?.content || 'This product may help address your skin concern.';
+    const prompt = `You are a skincare expert. Generate a brief, evidence-focused product recommendation (2-3 sentences) explaining why "${productName}" with active ingredients [${keyActives.join(', ')}] is suitable for treating "${issue.issue_name}". Keep it professional and evidence-focused.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    return text || 'This product may help address your skin concern.';
   } catch (error) {
     console.error('Error generating product summary:', error);
     return `${productName} contains ${keyActives.join(', ')} which may help address ${issue.issue_name.toLowerCase()}.`;
   }
 }
-

@@ -45,7 +45,7 @@ export default function ResultsPage() {
 
   const handleProductClick = (productId: string) => {
     const userId = localStorage.getItem('userId');
-    const affiliateUrl = trackAffiliateClick(productId, analysisId, userId);
+    const affiliateUrl = trackAffiliateClick(productId, analysisId, userId || undefined);
     window.open(affiliateUrl, '_blank');
   };
 
