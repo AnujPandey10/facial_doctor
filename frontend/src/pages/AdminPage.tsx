@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Edit2, Trash2, Package, FileText, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Package, FileText } from 'lucide-react';
 import { adminApi } from '../api/client';
 import { Product, Evidence } from '../types';
 import toast from 'react-hot-toast';
