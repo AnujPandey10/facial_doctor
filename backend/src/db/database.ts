@@ -3,9 +3,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Determine SSL configuration
+// Supabase (and other cloud providers) require SSL
+// If DATABASE_URL includes 'supabase' or 'sslmode=require', we enforce SSL
+const isProduction = process.env.NODE_ENV === 'production';
+const dbUrl = process.env.DATABASE_URL || '';
+const isSupabase = dbUrl.includes('supabase') || dbUrl.includes('sslmode=require');
+
+const sslConfig = (isProduction || isSupabase)
+  ? { rejectUnauthorized: false } // Required for Supabase in many environments
+  : false;
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: sslConfig
 });
 
 pool.on('error', (err) => {
@@ -31,4 +42,3 @@ export const getClient = async () => {
 };
 
 export default pool;
-

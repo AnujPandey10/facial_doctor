@@ -4,7 +4,7 @@ AI-powered cosmetic skin analysis with evidence-backed product recommendations u
 
 ## 🎯 Overview
 
-This MVP accepts user selfies, analyzes them using OpenAI's GPT-4 Vision API (or similar multimodal LLM), detects cosmetic skin concerns, and provides personalized product recommendations backed by scientific evidence.
+This MVP accepts user selfies, analyzes them using Google Gemini Pro Vision (or similar multimodal LLM), detects cosmetic skin concerns, and provides personalized product recommendations backed by scientific evidence.
 
 ## ✨ Features
 
@@ -20,7 +20,7 @@ This MVP accepts user selfies, analyzes them using OpenAI's GPT-4 Vision API (or
 
 ### Backend
 - ✅ `/api/analyze` endpoint for image analysis
-- ✅ OpenAI GPT-4 Vision integration
+- ✅ Google Gemini Integration (Gemini 1.5 Flash / Gemini Pro)
 - ✅ Structured JSON response with fallback parsing
 - ✅ Product catalog with INCI ingredients and key actives
 - ✅ Evidence database linked to active ingredients
@@ -38,33 +38,39 @@ This MVP accepts user selfies, analyzes them using OpenAI's GPT-4 Vision API (or
 
 ```
 ┌─────────────┐      ┌──────────────┐      ┌─────────────┐
-│   Frontend  │─────▶│   Backend    │─────▶│   OpenAI    │
-│  (React)    │      │  (Express)   │      │  GPT-4-V    │
+│   Frontend  │─────▶│   Backend    │─────▶│   Google    │
+│  (React)    │      │  (Express)   │      │   Gemini    │
 └─────────────┘      └──────────────┘      └─────────────┘
                             │
                             ▼
                      ┌──────────────┐
                      │  PostgreSQL  │
-                     │   Database   │
+                     │  (Supabase)  │
                      └──────────────┘
 ```
 
 ## 📋 Prerequisites
 
 - Node.js 18+ and npm
-- PostgreSQL 14+
-- OpenAI API key (or alternative multimodal LLM provider)
+- PostgreSQL 14+ (or Supabase project)
+- Google Cloud API Key (for Gemini)
 
 ## 🚀 Quick Start
 
-### 1. Database Setup
+### 1. Database Setup (Supabase)
+
+1. Create a project at [database.new](https://database.new)
+2. Get your connection string from **Settings > Database > Connection pooling**.
+   - Use the **Session** mode (port 5432) or **Transaction** mode (port 6543) with `sslmode=require`.
+   - Example: `postgres://postgres.[project-ref]:[password]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require`
 
 ```bash
-# Create PostgreSQL database
-createdb skincare_db
+# Configure .env with your Supabase URL
+cd backend
+cp env.example .env
+# Edit .env and set DATABASE_URL
 
 # Run migrations
-cd backend
 npm install
 npm run migrate
 
@@ -80,12 +86,9 @@ cd backend
 # Install dependencies
 npm install
 
-# Configure environment
-cp env.example .env
 # Edit .env with your credentials:
-# - DATABASE_URL
-# - OPENAI_API_KEY
-# - Other settings
+# - DATABASE_URL (Supabase or local Postgres)
+# - GOOGLE_API_KEY (from Google AI Studio)
 
 # Start development server
 npm run dev
@@ -311,7 +314,7 @@ The system should be tested with 20 diverse sample images covering:
    - Update `FRONTEND_URL` to production domain
 
 2. **Database**
-   - Use managed PostgreSQL (AWS RDS, Heroku Postgres, etc.)
+   - Use managed PostgreSQL (AWS RDS, Heroku Postgres, Supabase, etc.)
    - Enable connection pooling
    - Set up automated backups
    - Configure SSL connection
@@ -352,7 +355,7 @@ The system should be tested with 20 diverse sample images covering:
        │
    ┌───▼────────────┐
    │  PostgreSQL    │  (Managed, with read replicas)
-   │  (RDS/Aurora)  │
+   │  (Supabase)    │
    └────────────────┘
 ```
 
@@ -360,7 +363,7 @@ The system should be tested with 20 diverse sample images covering:
 
 ### Current Flow
 ```
-Image → Backend → OpenAI GPT-4V → Parse JSON → Map Products
+Image → Backend → Google Gemini → Parse JSON → Map Products
 ```
 
 ### Future Flow
@@ -438,7 +441,7 @@ Test with the same 20 sample images:
 The consent modal includes:
 - ✅ Clear statement: "This is NOT medical advice"
 - ✅ Disclosure of cloud image processing
-- ✅ Third-party AI provider mention (OpenAI)
+- ✅ Third-party AI provider mention (Google)
 - ✅ Data storage and retention policy
 - ✅ Affiliate link disclosure
 - ✅ Age requirement (18+)
@@ -512,12 +515,12 @@ All products include:
 ## 🐛 Troubleshooting
 
 ### "No response from LLM"
-- Check OpenAI API key is valid
+- Check Google API key is valid
 - Verify API quota/credits available
 - Check network connectivity
 
 ### "Failed to connect to database"
-- Ensure PostgreSQL is running
+- Ensure PostgreSQL/Supabase is running
 - Verify DATABASE_URL is correct
 - Check database exists and migrations ran
 
@@ -553,7 +556,6 @@ Potential improvements beyond MVP:
 
 ---
 
-**Built with**: React, TypeScript, Express, PostgreSQL, OpenAI GPT-4 Vision, TailwindCSS
+**Built with**: React, TypeScript, Express, PostgreSQL, Google Gemini, TailwindCSS
 
 **License**: MIT
-
